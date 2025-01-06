@@ -1,0 +1,17 @@
+# Xcode
+.DS_Store
+xcuserdata/
+*.xcworkspace/
+*.xcuserstate
+*.xcuserdatad
+*.xcodeproj/project.xcworkspace/
+DerivedData/
+Archives/
+Build/
+.idea/
+Pods/
+Podfile.lock
+Carthage/
+.swiftpm/
+Package.resolved
+.vscode/
