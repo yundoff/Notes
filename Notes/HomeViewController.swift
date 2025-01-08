@@ -8,21 +8,38 @@
 import UIKit
 
 final class HomeViewController: UIViewController {
-
+    
     // MARK: - UI Properties
-
+    
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.showsVerticalScrollIndicator = true
         return scrollView
     }()
-
+    
+    private lazy var titleStackView: UIStackView = {
+        let stackView = UIStackView(arrangedSubviews: [appTitle, appSubTitle])
+        stackView.axis = .vertical
+        stackView.spacing = 8
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        return stackView
+    }()
+    
     private let appTitle: UILabel = {
         let label = UILabel()
         label.text = "Notes"
         label.textColor = Resources.Colors.active
         label.font = UIFont(name: "Andale Mono", size: 48)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let appSubTitle: UILabel = {
+        let label = UILabel()
+        label.text = "Quick"
+        label.textColor = Resources.Colors.active
+        label.font = UIFont(name: "Andale Mono", size: 28)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -34,29 +51,36 @@ final class HomeViewController: UIViewController {
         button.layer.cornerRadius = 8
         button.configurationUpdateHandler = { button in
             var config = button.configuration ?? UIButton.Configuration.plain()
-            config.imagePadding = 8
-
-            // Конфигурация иконки с заданием размера
             let symbolConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)
-            let image = UIImage(systemName: "trash")?.withConfiguration(symbolConfig)
             
-            // Установка изображения и цвета
+            let image = UIImage(systemName: "trash")?.withConfiguration(symbolConfig)
             config.image = image?.withTintColor(Resources.Colors.text, renderingMode: .alwaysOriginal)
+            config.imagePadding = 8
             config.imagePlacement = .trailing
-
-            var titleAttr = AttributedString(button.currentTitle ?? "")
-            titleAttr.font = UIFont(name: "Andale Mono", size: 20)
-            titleAttr.foregroundColor = Resources.Colors.text
-            config.attributedTitle = titleAttr
+            
+            var attributes = AttributedString(button.currentTitle ?? "")
+            attributes.font = UIFont(name: "Andale Mono", size: 20)
+            attributes.foregroundColor = Resources.Colors.text
+            config.attributedTitle = attributes
             button.configuration = config
         }
+        button.addAction(onClick, for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(deleteAllTextViews), for: .touchUpInside)
         return button
     }()
-
-
-
+    
+    lazy var onClick = UIAction { [unowned self] _ in
+        let alert = UIAlertController(title: "", message: "Are you sure?", preferredStyle: .alert)
+        let cancel = UIAlertAction(title: "Cancel", style: .cancel)
+        let delete = UIAlertAction(title: "Delete", style: .destructive) { _ in
+            self.deleteAllTextViews()
+        }
+        alert.addAction(cancel)
+        alert.addAction(delete)
+        
+        self.present(alert, animated: true, completion: nil)
+    }
+    
     private lazy var textView: (CGPoint) -> UITextView = { point in
         let textView = UITextView()
         let frame = self.view.frame.width
@@ -70,16 +94,16 @@ final class HomeViewController: UIViewController {
         textView.textContainer.widthTracksTextView = true
         return textView
     }
-
+    
     private var activeTextView: UITextView?
     
     // MARK: - Lifecycle
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
     }
-
+    
     // MARK: - UI Setup
     
     private func setupView() {
@@ -90,7 +114,7 @@ final class HomeViewController: UIViewController {
     }
     
     private func setupSubviews() {
-        view.addSubview(appTitle)
+        view.addSubview(titleStackView)
         view.addSubview(scrollView)
         view.addSubview(deleteButton)
     }
@@ -102,22 +126,22 @@ final class HomeViewController: UIViewController {
     
     private func setupLayout() {
         let safeArea = view.safeAreaLayoutGuide
-
+        
         NSLayoutConstraint.activate([
-            appTitle.topAnchor.constraint(equalTo: safeArea.topAnchor),
-            appTitle.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor, constant: 20),
-
+            titleStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 64),
+            titleStackView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor, constant: 20),
+            
             scrollView.topAnchor.constraint(equalTo: appTitle.bottomAnchor, constant: 20),
             scrollView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor),
-
-            deleteButton.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor, constant: -16),
+            
+            deleteButton.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor, constant: -12),
             deleteButton.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor, constant: -16),
-
+            
         ])
     }
-
+    
     // MARK: - Gestures
     
     private lazy var gesture: UITapGestureRecognizer = {
@@ -133,9 +157,9 @@ final class HomeViewController: UIViewController {
         if activeTextView?.isFirstResponder == true { view.endEditing(true) }
         else { addTextView(at: gesture.location(in: scrollView)) }
     }
-
+    
     // MARK: - TextView Handling
-
+    
     private func addTextView(at point: CGPoint) {
         let textView = self.textView(point)
         scrollView.addSubview(textView)
@@ -150,21 +174,43 @@ final class HomeViewController: UIViewController {
         }
         let maxHeight = textViewMaxHeights.max() ?? 0
         
-        let newScrollViewHeight = max(maxHeight + 20, scrollView.bounds.height)
+        let newScrollViewHeight = max(maxHeight + 48, scrollView.bounds.height)
         scrollView.contentSize = CGSize(width: view.bounds.width, height: newScrollViewHeight)
     }
-
-    @objc private func deleteAllTextViews() {
+    
+    private func deleteAllTextViews() {
         scrollView.subviews.forEach { subview in
             if subview is UITextView {
-                subview.removeFromSuperview()
+                CATransaction.begin()
+                CATransaction.setCompletionBlock {
+                    subview.removeFromSuperview()
+                    self.updateScrollViewContentSize()
+                }
+                
+                let fadeAnimation = CABasicAnimation(keyPath: "opacity")
+                fadeAnimation.fromValue = 1.0
+                fadeAnimation.toValue = 0.0
+                fadeAnimation.duration = 0.2
+                
+                let scaleAnimation = CABasicAnimation(keyPath: "transform.scale")
+                scaleAnimation.fromValue = 1.0
+                scaleAnimation.toValue = 1.5
+                scaleAnimation.duration = 0.2
+                
+                let animationGroup = CAAnimationGroup()
+                animationGroup.animations = [fadeAnimation, scaleAnimation]
+                animationGroup.duration = 0.2
+                
+                subview.layer.add(animationGroup, forKey: "removalAnimation")
+                subview.layer.opacity = 0.0
+                
+                CATransaction.commit()
             }
         }
-        updateScrollViewContentSize()
     }
 
     // MARK: - Keyboard Handling
-
+    
     private func registerKeyboardNotifications() {
         let keyboardNotifications: [(NSNotification.Name, Selector)] = [
             (UIResponder.keyboardWillShowNotification, #selector(adjustForKeyboard)),
@@ -176,7 +222,7 @@ final class HomeViewController: UIViewController {
             )
         }
     }
-
+    
     @objc private func adjustForKeyboard(notification: NSNotification) {
         let keyboardFrameInfo = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey]
         guard let keyboardFrame = keyboardFrameInfo as? NSValue else { return }
@@ -206,7 +252,7 @@ extension HomeViewController: UITextViewDelegate {
         if textView.text.isEmpty { textView.removeFromSuperview() }
         updateScrollViewContentSize()
     }
-
+    
     func textViewDidChange(_ textView: UITextView) {
         let maxWidth = view.bounds.width - textView.frame.origin.x - 16
         let size = textView.sizeThatFits(CGSize(width: maxWidth, height: .greatestFiniteMagnitude))
