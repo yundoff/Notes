@@ -19,9 +19,8 @@ final class HomeViewController: UIViewController {
     }()
     
     private lazy var titleStackView: UIStackView = {
-        let stackView = UIStackView(arrangedSubviews: [appTitle, appSubTitle])
+        let stackView = UIStackView(arrangedSubviews: [appTitle, screenTitle])
         stackView.axis = .vertical
-        stackView.spacing = 8
         stackView.translatesAutoresizingMaskIntoConstraints = false
         return stackView
     }()
@@ -35,7 +34,7 @@ final class HomeViewController: UIViewController {
         return label
     }()
     
-    private let appSubTitle: UILabel = {
+    private let screenTitle: UILabel = {
         let label = UILabel()
         label.text = "Quick"
         label.textColor = Resources.Colors.active
@@ -46,13 +45,13 @@ final class HomeViewController: UIViewController {
     
     private lazy var deleteButton: UIButton = {
         let button = UIButton(type: .custom)
-        button.setTitle("clear screen", for: .normal)
+        button.setTitle("Сlear screen", for: .normal)
         button.backgroundColor = Resources.Colors.delete
         button.layer.cornerRadius = 8
         button.configurationUpdateHandler = { button in
             var config = button.configuration ?? UIButton.Configuration.plain()
-            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)
             
+            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)
             let image = UIImage(systemName: "trash")?.withConfiguration(symbolConfig)
             config.image = image?.withTintColor(Resources.Colors.text, renderingMode: .alwaysOriginal)
             config.imagePadding = 8
@@ -70,9 +69,12 @@ final class HomeViewController: UIViewController {
     }()
     
     lazy var onClick = UIAction { [unowned self] _ in
-        let alert = UIAlertController(title: "", message: "Are you sure?", preferredStyle: .alert)
+        let alert = UIAlertController(
+            title: "Warning!",
+            message: "Do you want to clear the screen?",
+            preferredStyle: .alert)
         let cancel = UIAlertAction(title: "Cancel", style: .cancel)
-        let delete = UIAlertAction(title: "Delete", style: .destructive) { _ in
+        let delete = UIAlertAction(title: "Clear", style: .destructive) { _ in
             self.deleteAllTextViews()
         }
         alert.addAction(cancel)
@@ -111,6 +113,7 @@ final class HomeViewController: UIViewController {
         setupKeyboardAndGesture()
         setupSubviews()
         setupLayout()
+        updateLayoutForOrientation()
     }
     
     private func setupSubviews() {
@@ -124,22 +127,66 @@ final class HomeViewController: UIViewController {
         scrollView.addGestureRecognizer(gesture)
     }
     
+    // MARK: - Constraints
+    
+    private var portraitConstraints: [NSLayoutConstraint] = []
+    private var landscapeLeftConstraints: [NSLayoutConstraint] = []
+    private var landscapeRightConstraints: [NSLayoutConstraint] = []
+
     private func setupLayout() {
         let safeArea = view.safeAreaLayoutGuide
+
+        portraitConstraints = [
+            titleStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 56),
+            titleStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+        ]
         
+        landscapeLeftConstraints = [
+            titleStackView.topAnchor.constraint(equalTo: view.topAnchor),
+            titleStackView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
+
+            deleteButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+        ]
+        
+        landscapeRightConstraints = [
+            titleStackView.topAnchor.constraint(equalTo: view.topAnchor),
+            titleStackView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
+        ]
+
         NSLayoutConstraint.activate([
-            titleStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 64),
-            titleStackView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor, constant: 20),
-            
-            scrollView.topAnchor.constraint(equalTo: appTitle.bottomAnchor, constant: 20),
             scrollView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: titleStackView.bottomAnchor),
             scrollView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor),
+            
+            screenTitle.leadingAnchor.constraint(equalTo: titleStackView.leadingAnchor, constant: 4),
             
             deleteButton.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor, constant: -12),
             deleteButton.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor, constant: -16),
-            
         ])
+    }
+
+    // MARK: - Orientation Handling
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate(alongsideTransition: { _ in
+            self.updateLayoutForOrientation()
+        })
+    }
+
+    private func updateLayoutForOrientation() {
+        NSLayoutConstraint.deactivate(portraitConstraints + landscapeLeftConstraints + landscapeRightConstraints)
+
+        if UIDevice.current.orientation.isPortrait || UIDevice.current.orientation.isFlat {
+            NSLayoutConstraint.activate(portraitConstraints)
+        } else if UIDevice.current.orientation == .landscapeLeft {
+            NSLayoutConstraint.activate(landscapeLeftConstraints)
+        } else if UIDevice.current.orientation == .landscapeRight {
+            NSLayoutConstraint.activate(landscapeRightConstraints)
+        }
+        view.layoutIfNeeded()
     }
     
     // MARK: - Gestures
@@ -254,7 +301,7 @@ extension HomeViewController: UITextViewDelegate {
     }
     
     func textViewDidChange(_ textView: UITextView) {
-        let maxWidth = view.bounds.width - textView.frame.origin.x - 16
+        let maxWidth = view.bounds.width - textView.frame.origin.x
         let size = textView.sizeThatFits(CGSize(width: maxWidth, height: .greatestFiniteMagnitude))
         textView.frame.size = CGSize(width: min(size.width, maxWidth), height: size.height)
         updateScrollViewContentSize()
