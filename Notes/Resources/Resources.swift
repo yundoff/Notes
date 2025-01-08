@@ -13,6 +13,8 @@ enum Resources {
         static var inactive = UIColor(hexString: "#757575")
         static var background = UIColor(hexString: "#363636")
         static var separator = UIColor(hexString: "#404040")
+        static var delete = UIColor(hexString: "#06C28D")
+        static var text = UIColor(hexString: "#000000")
     }
     enum Images {
         enum TabBar {
