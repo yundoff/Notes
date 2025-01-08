@@ -27,6 +27,36 @@ final class HomeViewController: UIViewController {
         return label
     }()
     
+    private lazy var deleteButton: UIButton = {
+        let button = UIButton(type: .custom)
+        button.setTitle("clear screen", for: .normal)
+        button.backgroundColor = Resources.Colors.delete
+        button.layer.cornerRadius = 8
+        button.configurationUpdateHandler = { button in
+            var config = button.configuration ?? UIButton.Configuration.plain()
+            config.imagePadding = 8
+
+            // Конфигурация иконки с заданием размера
+            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)
+            let image = UIImage(systemName: "trash")?.withConfiguration(symbolConfig)
+            
+            // Установка изображения и цвета
+            config.image = image?.withTintColor(Resources.Colors.text, renderingMode: .alwaysOriginal)
+            config.imagePlacement = .trailing
+
+            var titleAttr = AttributedString(button.currentTitle ?? "")
+            titleAttr.font = UIFont(name: "Andale Mono", size: 20)
+            titleAttr.foregroundColor = Resources.Colors.text
+            config.attributedTitle = titleAttr
+            button.configuration = config
+        }
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(deleteAllTextViews), for: .touchUpInside)
+        return button
+    }()
+
+
+
     private lazy var textView: (CGPoint) -> UITextView = { point in
         let textView = UITextView()
         let frame = self.view.frame.width
@@ -62,8 +92,9 @@ final class HomeViewController: UIViewController {
     private func setupSubviews() {
         view.addSubview(appTitle)
         view.addSubview(scrollView)
-        
+        view.addSubview(deleteButton)
     }
+    
     private func setupKeyboardAndGesture() {
         registerKeyboardNotifications()
         scrollView.addGestureRecognizer(gesture)
@@ -79,7 +110,11 @@ final class HomeViewController: UIViewController {
             scrollView.topAnchor.constraint(equalTo: appTitle.bottomAnchor, constant: 20),
             scrollView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor)
+            scrollView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor),
+
+            deleteButton.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor, constant: -16),
+            deleteButton.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor, constant: -16),
+
         ])
     }
 
@@ -98,6 +133,7 @@ final class HomeViewController: UIViewController {
         if activeTextView?.isFirstResponder == true { view.endEditing(true) }
         else { addTextView(at: gesture.location(in: scrollView)) }
     }
+
     // MARK: - TextView Handling
 
     private func addTextView(at point: CGPoint) {
@@ -116,6 +152,15 @@ final class HomeViewController: UIViewController {
         
         let newScrollViewHeight = max(maxHeight + 20, scrollView.bounds.height)
         scrollView.contentSize = CGSize(width: view.bounds.width, height: newScrollViewHeight)
+    }
+
+    @objc private func deleteAllTextViews() {
+        scrollView.subviews.forEach { subview in
+            if subview is UITextView {
+                subview.removeFromSuperview()
+            }
+        }
+        updateScrollViewContentSize()
     }
 
     // MARK: - Keyboard Handling
@@ -142,7 +187,6 @@ final class HomeViewController: UIViewController {
         scrollView.contentInset = contentInsets
         scrollView.scrollIndicatorInsets = contentInsets
         
-
         if notification.name == UIResponder.keyboardWillShowNotification,
            let textView = activeTextView {
             let keyboardTop = view.frame.height - keyboardHeight
