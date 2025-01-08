@@ -85,8 +85,8 @@ final class HomeViewController: UIViewController {
     
     private lazy var textView: (CGPoint) -> UITextView = { point in
         let textView = UITextView()
-        let frame = self.view.frame.width
-        textView.frame = CGRect(origin: point, size: CGSize(width: frame / 8, height: frame / 8))
+        let frame = self.view.frame
+        textView.frame = CGRect(origin: point, size: CGSize(width: frame.width, height: frame.height))
         textView.delegate = self
         textView.backgroundColor = .clear
         textView.font = UIFont(name: "Andale Mono", size: 24)
