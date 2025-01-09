@@ -10,7 +10,6 @@ import UIKit
 final class HomeViewController: UIViewController {
     
     // MARK: - UI Properties
-    
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -86,7 +85,7 @@ final class HomeViewController: UIViewController {
     private lazy var textView: (CGPoint) -> UITextView = { point in
         let textView = UITextView()
         let frame = self.view.frame
-        textView.frame = CGRect(origin: point, size: CGSize(width: frame.width, height: frame.height))
+        textView.frame = CGRect(origin: point, size: CGSize(width: frame.width/16, height: frame.height/16))
         textView.delegate = self
         textView.backgroundColor = .clear
         textView.font = UIFont(name: "Andale Mono", size: 24)
@@ -100,14 +99,12 @@ final class HomeViewController: UIViewController {
     private var activeTextView: UITextView?
     
     // MARK: - Lifecycle
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
     }
     
     // MARK: - UI Setup
-    
     private func setupView() {
         view.backgroundColor = Resources.Colors.background
         setupKeyboardAndGesture()
@@ -128,7 +125,6 @@ final class HomeViewController: UIViewController {
     }
     
     // MARK: - Constraints
-    
     private var portraitConstraints: [NSLayoutConstraint] = []
     private var landscapeLeftConstraints: [NSLayoutConstraint] = []
     private var landscapeRightConstraints: [NSLayoutConstraint] = []
@@ -167,7 +163,6 @@ final class HomeViewController: UIViewController {
     }
 
     // MARK: - Orientation Handling
-    
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 
@@ -190,7 +185,6 @@ final class HomeViewController: UIViewController {
     }
     
     // MARK: - Gestures
-    
     private lazy var gesture: UITapGestureRecognizer = {
         let gesture = UITapGestureRecognizer()
         gesture.addTarget(self, action: #selector(handleTap(_:)))
@@ -206,7 +200,6 @@ final class HomeViewController: UIViewController {
     }
     
     // MARK: - TextView Handling
-    
     private func addTextView(at point: CGPoint) {
         let textView = self.textView(point)
         scrollView.addSubview(textView)
@@ -257,7 +250,6 @@ final class HomeViewController: UIViewController {
     }
 
     // MARK: - Keyboard Handling
-    
     private func registerKeyboardNotifications() {
         let keyboardNotifications: [(NSNotification.Name, Selector)] = [
             (UIResponder.keyboardWillShowNotification, #selector(adjustForKeyboard)),
@@ -293,7 +285,6 @@ final class HomeViewController: UIViewController {
 }
 
 // MARK: - UITextViewDelegate
-
 extension HomeViewController: UITextViewDelegate {
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView.text.isEmpty { textView.removeFromSuperview() }
