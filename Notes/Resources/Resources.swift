@@ -20,7 +20,6 @@ enum Resources {
         enum TabBar {
             static var Home = UIImage(named: "house")
             static var List = UIImage(named: "list.clipboard")
-            static var Search = UIImage(named: "text.page.badge.magnifyingglass")
             static var Note = UIImage(named: "square.and.pencil")
         }
     }

@@ -10,7 +10,6 @@ import UIKit
 enum Tabs: Int {
     case Home
     case List
-    case Search
     case Note
 }
 
@@ -20,34 +19,37 @@ final class TabBarController: UITabBarController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupView()
         view.backgroundColor = Resources.Colors.background
-    }
-    // MARK: - Methods
-    
-    func setupView() {
-        setupTabBar()
         setupNavigationControllers()
     }
     
-    func setupTabBar() {
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        setupTabBar()
+    }
+    // MARK: - Private Methods
+
+    private func setupTabBar() {
         tabBar.shadowImage = UIImage()
         tabBar.backgroundImage = UIImage()
         tabBar.tintColor = Resources.Colors.active
         tabBar.barTintColor = Resources.Colors.inactive
         tabBar.backgroundColor = Resources.Colors.background
         tabBar.layer.masksToBounds = true
+
+        tabBar.layer.sublayers?.removeAll(where: { $0.name == "TopBorder" })
+
         let topBorder = CALayer()
+        topBorder.name = "TopBorder"
         topBorder.frame = CGRect(x: 0, y: 0, width: tabBar.frame.width, height: 2)
         topBorder.backgroundColor = Resources.Colors.separator.cgColor
         tabBar.layer.addSublayer(topBorder)
     }
     
-    func setupNavigationControllers() {
+    private func setupNavigationControllers() {
         
         let HomeNavController = UINavigationController(rootViewController: HomeViewController())
         let ListNavController = UINavigationController(rootViewController: ListViewController())
-//        let SearchNavController = UINavigationController(rootViewController: ListViewController())
         let NoteNavController = UINavigationController(rootViewController: NoteViewController())
         
         HomeNavController.tabBarItem = UITabBarItem(
@@ -58,10 +60,6 @@ final class TabBarController: UITabBarController {
             title: "",
             image: Resources.Images.TabBar.List,
             tag: Tabs.List.rawValue)
-//        SearchNavController.tabBarItem = UITabBarItem(
-//            title: "",
-//            image: Resources.Images.TabBar.Search,
-//            tag: Tabs.Search.rawValue)
         NoteNavController.tabBarItem = UITabBarItem(
             title: "",
             image: Resources.Images.TabBar.Note,
