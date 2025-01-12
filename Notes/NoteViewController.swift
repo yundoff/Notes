@@ -18,9 +18,9 @@ final class NoteViewController: UIViewController {
     }()
     
     private let contentView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
+        let contentView = UIView()
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        return contentView
     }()
     
     private let backgroundView: UIView = {
@@ -61,8 +61,6 @@ final class NoteViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
-        registerKeyboardNotifications()
-        setupNavigationBar() 
     }
     
     deinit {
@@ -80,6 +78,8 @@ final class NoteViewController: UIViewController {
         contentView.addSubview(noteTextView)
 
         setupLayout()
+        setupNavigationBar()
+        registerKeyboardNotifications()
         setupGestures()
         setupTextViewDelegates()
     }
@@ -89,31 +89,25 @@ final class NoteViewController: UIViewController {
         let safeArea = view.safeAreaLayoutGuide
         
         NSLayoutConstraint.activate([
-            // BackgroundView покрывает весь экран
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            // ScrollView constraints
             scrollView.topAnchor.constraint(equalTo: safeArea.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor),
             
-            // ContentView constraints
             contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor), // Fix width
             
-            // TitleTextView constraints
             titleTextView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
             titleTextView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             titleTextView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             
-            // NoteTextView constraints
             noteTextView.topAnchor.constraint(equalTo: titleTextView.bottomAnchor, constant: 16),
             noteTextView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             noteTextView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
@@ -123,13 +117,11 @@ final class NoteViewController: UIViewController {
     
     // MARK: - Navigation Bar Setup
     private func setupNavigationBar() {
-        // Настраиваем шрифт для кнопок
         let buttonAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont(name: "Andale Mono", size: 18) ?? UIFont.systemFont(ofSize: 18),
             .foregroundColor: Resources.Colors.delete
         ]
         
-        // Настраиваем кнопку "Назад"
         let backButton = UIBarButtonItem(
             title: "Back",
             style: .plain,
@@ -139,7 +131,6 @@ final class NoteViewController: UIViewController {
         backButton.setTitleTextAttributes(buttonAttributes, for: .normal)
         backButton.setTitleTextAttributes(buttonAttributes, for: .highlighted)
         
-        // Настраиваем кнопку "Сохранить"
         let saveButton = UIBarButtonItem(
             title: "Save",
             style: .done,
@@ -155,19 +146,21 @@ final class NoteViewController: UIViewController {
     
     // MARK: - Button Actions
     @objc private func handleBackButton() {
-        // Логика для кнопки "Назад"
-        navigationController?.popViewController(animated: true)
+        if let tabBarController = self.tabBarController,
+           let viewControllers = tabBarController.viewControllers,
+           viewControllers.count > 1 {
+            tabBarController.selectedIndex = 1
+        }
     }
 
+    var onSave: ((Note) -> Void)?
+    
     @objc private func handleSaveButton() {
-        // Логика для кнопки "Сохранить"
         let titleText = titleTextView.text ?? ""
         let noteText = noteTextView.text ?? ""
+        let note = Note(title: titleText, text: noteText, creationDate: Date())
         
-        // Сохранение пустой заметки
-        print("Note saved: Title - \(titleText), Note - \(noteText)")
-        
-        // Возврат к предыдущему экрану
+        onSave?(note)
         navigationController?.popViewController(animated: true)
     }
     
@@ -200,7 +193,7 @@ final class NoteViewController: UIViewController {
             let keyboardTop = view.frame.height - keyboardHeight
             let textViewBottom = scrollView.convert(textView.frame, to: view).maxY
             if textViewBottom > keyboardTop {
-                let offset = textViewBottom - keyboardTop + 16 // Adding small padding
+                let offset = textViewBottom - keyboardTop + 16
                 scrollView.setContentOffset(CGPoint(x: 0, y: offset), animated: true)
             }
         }
@@ -225,14 +218,28 @@ final class NoteViewController: UIViewController {
 
 // MARK: - UITextViewDelegate
 extension NoteViewController: UITextViewDelegate {
+    
     func textViewDidBeginEditing(_ textView: UITextView) {
         activeTextView = textView
+
+        if textView == titleTextView && textView.text == "Enter title..." {
+            textView.text = ""
+            textView.textColor = .white
+        } else if textView == noteTextView && textView.text == "Enter notes..." {
+            textView.text = ""
+            textView.textColor = .white
+        }
     }
     
     func textViewDidEndEditing(_ textView: UITextView) {
         activeTextView = nil
-        if textView.text.isEmpty {
-            textView.text = textView == titleTextView ? "Enter title..." : "Enter notes..."
+        
+        if textView == titleTextView && textView.text.isEmpty {
+            textView.text = "Enter title..."
+            textView.textColor = .lightGray
+        } else if textView == noteTextView && textView.text.isEmpty {
+            textView.text = "Enter notes..."
+            textView.textColor = .lightGray
         }
     }
 }

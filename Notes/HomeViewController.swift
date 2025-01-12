@@ -145,8 +145,8 @@ final class HomeViewController: UIViewController {
         ]
         
         landscapeRightConstraints = [
-            titleStackView.topAnchor.constraint(equalTo: view.topAnchor),
-            titleStackView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
+            titleStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+            titleStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
         ]
 
         NSLayoutConstraint.activate([
@@ -162,6 +162,7 @@ final class HomeViewController: UIViewController {
         ])
     }
 
+    // TODO: - Separate
     // MARK: - Orientation Handling
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
